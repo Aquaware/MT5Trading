@@ -207,14 +207,12 @@ def firstUpdate(size=99999):
 def firstTicks():
     for stock in Setting.xm_index():
         server = MT5Bind(stock)
-
         jst = TimeUtility.jstTime(2018, 1, 1, 0, 0)
-        data = server.acquireTicks(jst, size=1000000)
+        data = server.acquireTicks(jst, size=100000)
         if len(data) <= 1:
             continue
         handler.updateTicks(stock, data)
-
-        for i in range(50):
+        for i in range(1000):
             tbegin, tend = handler.rangeOfTicks(stock)
             data = server.acquireTicksRange(tend, TimeUtility.nowJst())
             if len(data) > 1:
@@ -222,7 +220,6 @@ def firstTicks():
                 print(stock, 'Tick', 'Download done ', len(data))
             else:
                 break
-
 
 def test1():
     stock = 'US30Cash'
@@ -303,6 +300,7 @@ if __name__ == '__main__':
     #test4()
     #save('US30Cash', 'D1')
     #test4()
+
 
 
         
