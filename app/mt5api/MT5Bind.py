@@ -197,7 +197,7 @@ def test2():
     print('XM2', TimeUtility.toXm(jst))
     
 def test3(size):
-    server = MT5Bind('US30Cash')
+    server = MT5Bind('JP225Cash')
     d = server.acquire(Timeframe('M1'), size=size)
     print(d)
     
@@ -212,4 +212,4 @@ def test4():
 
     
 if __name__ == "__main__":
-    test4()
+    test3(30)

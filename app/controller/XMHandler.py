@@ -9,6 +9,7 @@ sys.path.append('../db')
 sys.path.append('../utillity')
 sys.path.append('../setting')
 
+import logging
 import time
 import pandas as pd
 from MT5Bind import MT5Bind
@@ -16,6 +17,9 @@ from PriceDatabase import PriceDatabase, ManageTable, CandleTable, TickTable
 from TimeUtility import TimeUtility
 from Timeframe import Timeframe, HOUR, MINUTE, DAY
 from Setting import Setting
+
+logging.basicConfig(level=logging.DEBUG, filename="debug.log", format="%(asctime)s %(levelname)-7s %(message)s")
+logger = logging.getLogger("logger")
 
 class XMHandler:
     def __init__(self):
@@ -39,6 +43,8 @@ class XMHandler:
     def update(self, stock, timeframe: Timeframe, data):
         # remove last data
         data = data[:len(data) - 1]
+        for d in data:
+            logger.debug('update() ... ' + stock + '-' + timeframe.symbol + ': ' + str(d[0]))
         table = CandleTable(stock, timeframe)
         db = PriceDatabase()
         ret = db.insert(table, data)
@@ -54,9 +60,9 @@ class XMHandler:
         manage = ManageTable()
         db = PriceDatabase()
         if begin is None:
-            ret = db.insert(manage, [[stock, timeframe.symbol, str(tbegin), str(tend)]])
+            ret = db.insert(manage, [[stock, timeframe.symbol, tbegin, tend]])
         else:
-            ret = db.update(manage, [stock, timeframe.symbol, str(tbegin), str(tend)])
+            ret = db.update(manage, [stock, timeframe.symbol, tbegin, tend])
         return len(data)
 
     def updateTicks(self, stock, data):
@@ -81,9 +87,9 @@ class XMHandler:
         manage = ManageTable()
         db = PriceDatabase()
         if begin is None:
-            ret = db.insert(manage, [[stock, 'tick', str(tbegin), str(tend)]])
+            ret = db.insert(manage, [[stock, 'tick', tbegin, tend]])
         else:
-            ret = db.update(manage, [stock, 'tick', str(tbegin), str(tend)])
+            ret = db.update(manage, [stock, 'tick', tbegin, tend])
         return len(data)
 
     def rangeOfTime(self, stock, timeframe:Timeframe):
@@ -134,12 +140,12 @@ def start():
                     print(stock, timeframe.symbol, 'Download done ', len(data))
                     last_update[i] = now
 
-            #(tbegin, tend) = handler.rangeOfTicks(stock)
-            #data = server.acquireTicksRange(tend, now)
-            #if len(data) > 1:
-            #    handler.updateTicks(stock, data)
-            #    print(stock, 'Tick', 'Download done ', len(data))
-        time.sleep(10)
+            (tbegin, tend) = handler.rangeOfTicks(stock)
+            data = server.acquireTicksRange(tend, TimeUtility.nowJst())
+            if len(data) > 1:
+                handler.updateTicks(stock, data)
+                print(stock, 'Tick', 'Download done ', len(data))
+        time.sleep(1)
 
 def stop():
     loop = False
@@ -174,21 +180,32 @@ def buildTest():
             print(stock + ': ' + timeframe.symbol + ' Table build')
 
 
-def firstUpdate():
+def firstUpdate(size=1000000):
     for stock in Setting.xm_index():
         server = MT5Bind(stock)
         for timeframe in Timeframe.timeframes():
             (begin, end) = handler.rangeOfTime(stock, timeframe)
-            data = server.acquire(timeframe, size=50)
+            data = server.acquire(timeframe, size=size)
             if len(data) <= 1:
                 continue
             handler.update(stock, timeframe, data)
             begin, end = handler.rangeOfTime(stock, timeframe)
             print('Done... legth: ', len(data), stock, timeframe, begin, end)
+            logger.debug('firstUpdate() ... ' + stock + '-' + timeframe.symbol + ' begin: ' + str(begin) + ' end: ' + str(end))
 
-            
+        data = server.acquireTicks(TimeUtility.nowJst(), size=size)
+        if len(data) <= 1:
+            continue
+        handler.updateTicks(stock, data)
+        begin, end = handler.rangeOfTicks(stock)
+        print('Done... legth: ', len(data), stock, begin, end)
+        logger.debug(
+            'firstUpdate() ... ' + stock + '-' + 'Tick' + ' begin: ' + str(begin) + ' end: ' + str(end))
+
+
 def test1():
     stock = 'US30Cash'
+
     timeframe = Timeframe('M1')
     (begin, end) = handler.rangeOfTime(stock, timeframe)
     #t0 = end + timeframe.deltaTime
@@ -236,7 +253,7 @@ def test4():
     (tbegin, tend) = handler.rangeOfTicks(stock)
     now = TimeUtility.nowJst()
     server = MT5Bind(stock)
-    data = server.acquireTicksRange(tend, now)
+    data = server.acquireTicks(now, size = 10)
     if len(data) <= 1:
         return len(data) - 1
 
@@ -256,12 +273,13 @@ def save(stock, timeframe):
     
     
 if __name__ == '__main__':
-    build()        # Build Tables
+    #build()        # Build Tables
     firstUpdate()  # Initial Data save to table
     #buildTest()
     #test2()
     #test4()
     #save('US30Cash', 'D1')
+    #test4()
 
 
         

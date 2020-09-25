@@ -13,6 +13,7 @@ from Setting import Setting
 from Timeseries import Timeseries, OHLC, OHLCV
 from Timeframe import Timeframe
 from TimeUtility import TimeUtility
+from datetime import datetime
 
 TIME = 'time'
 OPEN = 'open'
@@ -49,7 +50,7 @@ def CandleTable(stock, timeframe:Timeframe):
 def TickTable(stock):
     name = stock + '_tick'
     struct = {TIME: 'timestamp', BID:'real', ASK:'real', MID:'real', VOLUME:'real'}
-    table = Structure(name, [], struct)
+    table = Structure(name, [TIME], struct)
     return table
 
 class PriceDatabase(Postgres):
@@ -65,7 +66,7 @@ class PriceDatabase(Postgres):
     def fetchAllItem(self, table, asc_order_column):
         array = self.fetchAll(table, asc_order_column)
         return self.values2dic(table, array)
- 
+
     def value2dic(self, table, values):
         dic = {}
         if len(values) == 0:
@@ -123,7 +124,6 @@ class PriceDatabase(Postgres):
     def time2pyTime(self, time_list):
         time = []
         for t in time_list:
-            #t0 = datetime.datetime.strptime(tstr, TIME_FORMAT)
             t1 = t.astimezone(pytz.timezone('Asia/Tokyo'))
             time.append(t1)
         return time
