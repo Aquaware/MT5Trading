@@ -196,20 +196,21 @@ def test2():
     jst = TimeUtility.jstTime(2020, 4, 8, 22, 13)
     print('XM2', TimeUtility.toXm(jst))
     
-def test3(size):
-    server = MT5Bind('JP225Cash')
-    d = server.acquire(Timeframe('M1'), size=size)
-    print(d)
+def test3(stock, timeframe_str, size):
+    server = MT5Bind(stock)
+    d = server.acquire(Timeframe(timeframe_str), size=size)
+    print('Done: ', len(d))
     
-def test4():
-    server = MT5Bind('US30Cash')
-    jst = TimeUtility.jstTime(2020, 9, 21, 15, 30)
-    d = server.acquireTicks(jst, size=30000)
+def test4(stock, size):
+    server = MT5Bind(stock)
+    jst = TimeUtility.nowJst() - TimeUtility.deltaDay(10)
+    d = server.acquireTicks(jst, size=size)
     print(d[0])
-    df = pd.DataFrame(data = d, columns=['Time', 'Bid', 'Ask', 'value1', 'value2', 'volume'])
-    df.to_csv('./US30_tick.csv', index=False)
+    print('Done: ', len(d))
+    #df = pd.DataFrame(data = d, columns=['Time', 'Bid', 'Ask', 'value1', 'value2', 'volume'])
+    #df.to_csv('./US30_tick.csv', index=False)
 
 
     
 if __name__ == "__main__":
-    test3(30)
+    test4('US30Cash', 1000000) # m1: 99999)

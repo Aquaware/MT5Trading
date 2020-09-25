@@ -180,7 +180,7 @@ def buildTest():
             print(stock + ': ' + timeframe.symbol + ' Table build')
 
 
-def firstUpdate(size=1000000):
+def firstUpdate(size=99999):
     for stock in Setting.xm_index():
         server = MT5Bind(stock)
         for timeframe in Timeframe.timeframes():
@@ -193,7 +193,7 @@ def firstUpdate(size=1000000):
             print('Done... legth: ', len(data), stock, timeframe, begin, end)
             logger.debug('firstUpdate() ... ' + stock + '-' + timeframe.symbol + ' begin: ' + str(begin) + ' end: ' + str(end))
 
-        data = server.acquireTicks(TimeUtility.nowJst(), size=size)
+        data = server.acquireTicks(TimeUtility.nowJst(), size=1000000)
         if len(data) <= 1:
             continue
         handler.updateTicks(stock, data)
@@ -273,7 +273,7 @@ def save(stock, timeframe):
     
     
 if __name__ == '__main__':
-    #build()        # Build Tables
+    build()        # Build Tables
     firstUpdate()  # Initial Data save to table
     #buildTest()
     #test2()
