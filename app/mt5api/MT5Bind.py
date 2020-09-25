@@ -203,9 +203,9 @@ def test3(stock, timeframe_str, size):
     
 def test4(stock, size):
     server = MT5Bind(stock)
-    jst = TimeUtility.nowJst() - TimeUtility.deltaDay(10)
+    jst = TimeUtility.jstTime(2018, 1, 1, 0, 0)
     d = server.acquireTicks(jst, size=size)
-    print(d[0])
+    print(d[0], d[-1])
     print('Done: ', len(d))
     #df = pd.DataFrame(data = d, columns=['Time', 'Bid', 'Ask', 'value1', 'value2', 'volume'])
     #df.to_csv('./US30_tick.csv', index=False)

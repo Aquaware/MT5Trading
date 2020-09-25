@@ -187,20 +187,41 @@ def firstUpdate(size=99999):
             (begin, end) = handler.rangeOfTime(stock, timeframe)
             data = server.acquire(timeframe, size=size)
             if len(data) <= 1:
+                print('Error No Data', stock, timeframe.symbol)
                 continue
+
             handler.update(stock, timeframe, data)
             begin, end = handler.rangeOfTime(stock, timeframe)
-            print('Done... legth: ', len(data), stock, timeframe, begin, end)
+            print('Done... legth: ', len(data), stock, timeframe.symbol, begin, end)
             logger.debug('firstUpdate() ... ' + stock + '-' + timeframe.symbol + ' begin: ' + str(begin) + ' end: ' + str(end))
 
-        data = server.acquireTicks(TimeUtility.nowJst(), size=1000000)
+        #jst = TimeUtility.nowJst() - TimeUtility.deltaDay(50)
+        #data = server.acquireTicks(jst, size=1000000)
+        #if len(data) <= 1:
+        #    continue
+        #handler.updateTicks(stock, data)
+        #begin, end = handler.rangeOfTicks(stock)
+        #print('Done... legth: ', len(data), stock, begin, end)
+        #logger.debug('firstUpdate() ... ' + stock + '-' + 'Tick' + ' begin: ' + str(begin) + ' end: ' + str(end))
+
+def firstTicks():
+    for stock in Setting.xm_index():
+        server = MT5Bind(stock)
+
+        jst = TimeUtility.jstTime(2018, 1, 1, 0, 0)
+        data = server.acquireTicks(jst, size=1000000)
         if len(data) <= 1:
             continue
         handler.updateTicks(stock, data)
-        begin, end = handler.rangeOfTicks(stock)
-        print('Done... legth: ', len(data), stock, begin, end)
-        logger.debug(
-            'firstUpdate() ... ' + stock + '-' + 'Tick' + ' begin: ' + str(begin) + ' end: ' + str(end))
+
+        for i in range(50):
+            tbegin, tend = handler.rangeOfTicks(stock)
+            data = server.acquireTicksRange(tend, TimeUtility.nowJst())
+            if len(data) > 1:
+                handler.updateTicks(stock, data)
+                print(stock, 'Tick', 'Download done ', len(data))
+            else:
+                break
 
 
 def test1():
@@ -275,6 +296,8 @@ def save(stock, timeframe):
 if __name__ == '__main__':
     build()        # Build Tables
     firstUpdate()  # Initial Data save to table
+    firstTicks()
+    
     #buildTest()
     #test2()
     #test4()
