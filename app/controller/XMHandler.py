@@ -208,18 +208,29 @@ def firstTicks():
     for stock in Setting.xm_index():
         server = MT5Bind(stock)
         jst = TimeUtility.jstTime(2018, 1, 1, 0, 0)
-        data = server.acquireTicks(jst, size=100000)
-        if len(data) <= 1:
-            continue
+        for i in range(10):
+            data = server.acquireTicks(jst, size=100000)
+            if len(data) > 1:
+                print(stock, 'Tick1 Downhload done ', i, len(data), data[0], data[-1])
+                break
+            else:
+                jst = jst + TimeUtility.deltaHour(24)
+
         handler.updateTicks(stock, data)
+        nothing = 0
         for i in range(1000):
             tbegin, tend = handler.rangeOfTicks(stock)
-            data = server.acquireTicksRange(tend, TimeUtility.nowJst())
+            if tend is None:
+                break
+            data = server.acquireTicks(tend, size=100000)
             if len(data) > 1:
                 handler.updateTicks(stock, data)
-                print(stock, 'Tick', 'Download done ', len(data))
+                print(stock, 'Tick2 Download done ', i, len(data), data[0], data[-1])
+                nothing = 0
             else:
-                break
+                nothing += 1
+                if nothing > 20:
+                    break
 
 def test1():
     stock = 'US30Cash'
@@ -291,8 +302,8 @@ def save(stock, timeframe):
     
     
 if __name__ == '__main__':
-    build()        # Build Tables
-    firstUpdate()  # Initial Data save to table
+    #build()        # Build Tables
+    #firstUpdate()  # Initial Data save to table
     firstTicks()
     
     #buildTest()
