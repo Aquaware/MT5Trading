@@ -121,7 +121,6 @@ loop = True
 # -----------------
 
 def start():
-
     now = TimeUtility.nowJst()
     n = len(Timeframe.timeframes())
     last_update = []
@@ -140,11 +139,7 @@ def start():
                     print(stock, timeframe.symbol, 'Download done ', len(data))
                     last_update[i] = now
 
-            (tbegin, tend) = handler.rangeOfTicks(stock)
-            data = server.acquireTicksRange(tend, TimeUtility.nowJst())
-            if len(data) > 1:
-                handler.updateTicks(stock, data)
-                print(stock, 'Tick', 'Download done ', len(data))
+            updateTicks(50)
         time.sleep(1)
 
 def stop():
@@ -195,16 +190,8 @@ def firstUpdate(size=99999):
             print('Done... legth: ', len(data), stock, timeframe.symbol, begin, end)
             logger.debug('firstUpdate() ... ' + stock + '-' + timeframe.symbol + ' begin: ' + str(begin) + ' end: ' + str(end))
 
-        #jst = TimeUtility.nowJst() - TimeUtility.deltaDay(50)
-        #data = server.acquireTicks(jst, size=1000000)
-        #if len(data) <= 1:
-        #    continue
-        #handler.updateTicks(stock, data)
-        #begin, end = handler.rangeOfTicks(stock)
-        #print('Done... legth: ', len(data), stock, begin, end)
-        #logger.debug('firstUpdate() ... ' + stock + '-' + 'Tick' + ' begin: ' + str(begin) + ' end: ' + str(end))
 
-def updateTicks():
+def updateTicks(repeat):
     for stock in Setting.xm_index():
         server = MT5Bind(stock)
         tbegin, tend = handler.rangeOfTicks(stock)
@@ -214,7 +201,7 @@ def updateTicks():
             t = tend
 
         nothing = 0
-        for i in range(1000):
+        for i in range(repeat):
             data = server.acquireTicks(t, size=100000)
             if len(data) > 1:
                 handler.updateTicks(stock, data)
@@ -299,8 +286,8 @@ def save(stock, timeframe):
     
 if __name__ == '__main__':
     build()        # Build Tables
-    #firstUpdate()  # Initial Data save to table
-    updateTicks()
+    firstUpdate()  # Initial Data save to table
+    updateTicks(1000)
     
     #buildTest()
     #test2()
