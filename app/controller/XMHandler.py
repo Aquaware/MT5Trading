@@ -204,32 +204,28 @@ def firstUpdate(size=99999):
         #print('Done... legth: ', len(data), stock, begin, end)
         #logger.debug('firstUpdate() ... ' + stock + '-' + 'Tick' + ' begin: ' + str(begin) + ' end: ' + str(end))
 
-def firstTicks():
+def updateTicks():
     for stock in Setting.xm_index():
         server = MT5Bind(stock)
-        jst = TimeUtility.jstTime(2018, 1, 1, 0, 0)
-        for i in range(10):
-            data = server.acquireTicks(jst, size=100000)
-            if len(data) > 1:
-                print(stock, 'Tick1 Downhload done ', i, len(data), data[0], data[-1])
-                break
-            else:
-                jst = jst + TimeUtility.deltaHour(24)
+        tbegin, tend = handler.rangeOfTicks(stock)
+        if tend is None:
+            t = TimeUtility.jstTime(2018, 1, 1, 0, 0)
+        else:
+            t = tend
 
-        handler.updateTicks(stock, data)
         nothing = 0
         for i in range(1000):
-            tbegin, tend = handler.rangeOfTicks(stock)
-            if tend is None:
-                break
-            data = server.acquireTicks(tend, size=100000)
+            data = server.acquireTicks(t, size=100000)
             if len(data) > 1:
                 handler.updateTicks(stock, data)
-                print(stock, 'Tick2 Download done ', i, len(data), data[0], data[-1])
+                print(stock, str(TimeUtility.nowJst()), 'Tick Download done ', i, len(data), data[0], data[-1])
+                tbegin, tend = handler.rangeOfTicks(stock)
+                t = tend
                 nothing = 0
             else:
+                t += TimeUtility.deltaDay(1)
                 nothing += 1
-                if nothing > 20:
+                if nothing > 10:
                     break
 
 def test1():
@@ -302,9 +298,9 @@ def save(stock, timeframe):
     
     
 if __name__ == '__main__':
-    #build()        # Build Tables
+    build()        # Build Tables
     #firstUpdate()  # Initial Data save to table
-    firstTicks()
+    updateTicks()
     
     #buildTest()
     #test2()
