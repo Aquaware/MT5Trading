@@ -17,6 +17,7 @@ from PriceDatabase import PriceDatabase, ManageTable, CandleTable, TickTable
 from TimeUtility import TimeUtility
 from Timeframe import Timeframe, HOUR, MINUTE, DAY
 from Setting import Setting
+from threading import Thread
 
 logging.basicConfig(level=logging.DEBUG, filename="debug.log", format="%(asctime)s %(levelname)-7s %(message)s")
 logger = logging.getLogger("logger")
@@ -139,7 +140,7 @@ def start():
                     print(stock, timeframe.symbol, 'Download done ', len(data))
                     last_update[i] = now
 
-            updateTicks(50)
+            updateTicks(size=200)
         time.sleep(1)
 
 def stop():
@@ -191,7 +192,7 @@ def firstUpdate(size=99999):
             logger.debug('firstUpdate() ... ' + stock + '-' + timeframe.symbol + ' begin: ' + str(begin) + ' end: ' + str(end))
 
 
-def updateTicks(repeat):
+def updateTicks(repeat=100000):
     for stock in Setting.xm_index():
         server = MT5Bind(stock)
         tbegin, tend = handler.rangeOfTicks(stock)
@@ -206,13 +207,14 @@ def updateTicks(repeat):
             if len(data) > 1:
                 handler.updateTicks(stock, data)
                 print(stock, str(TimeUtility.nowJst()), 'Tick Download done ', i, len(data), data[0], data[-1])
+                logger.debug('updateTicks() ... ' + stock + ': ' + str(i) + ' Length:' + str(len(data)) + '...' + str(data[0]) + '-' + str(data[-1]))
                 tbegin, tend = handler.rangeOfTicks(stock)
                 t = tend
                 nothing = 0
             else:
-                t += TimeUtility.deltaDay(1)
+                t += TimeUtility.deltaHour(6)
                 nothing += 1
-                if nothing > 10:
+                if nothing > 10 * 6 / 24:
                     break
 
 def test1():
@@ -283,11 +285,17 @@ def save(stock, timeframe):
     df = pd.DataFrame(data=d, columns=['Time', 'Open', 'High', 'Low', 'Close'])
     df.to_csv('./' + stock + '_' + timeframe + '.csv', index=False)
     
-    
+
+def ticksThread():
+    thread1 = Thread(target=updateTicks)
+    thread1.start()
+    thread1.join()
+        
 if __name__ == '__main__':
-    build()        # Build Tables
-    firstUpdate()  # Initial Data save to table
-    updateTicks(1000)
+    #build()        # Build Tables
+    #firstUpdate()  # Initial Data save to table
+    
+    ticksThread()
     
     #buildTest()
     #test2()
