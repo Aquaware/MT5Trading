@@ -58,14 +58,13 @@ class Timeframe:
         else:
             return False
 
-    @property
-    def deltaTime(self):
+    def deltaTime(self, multiply=1.0):
         if self.unit == MINUTE:
-            return TimeUtility.deltaMinute(self.value)
+            return TimeUtility.deltaSecond(multiply * self.value * 60)
         elif self.unit == HOUR:
-            return TimeUtility.deltaHour(self.value)
+            return TimeUtility.deltaMinute(multiply * self.value * 60)
         elif self.unit == DAY:
-            return TimeUtility.deltaDay(self.value)
+            return TimeUtility.deltaHour(multiply * self.value * 24)
 
     @property
     def symbols(self):

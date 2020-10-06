@@ -2,6 +2,7 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../model'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../setting'))
 
 import pandas as pd
 import MetaTrader5 as mt5
@@ -12,6 +13,7 @@ from Timeseries import Timeseries
 from TimeUtility import TimeUtility
 from Timeframe import DAY, HOUR, MINUTE
 from Timeseries import OHLCV, OHLC
+from Setting import Setting
 
 
 class MT5Bind:
@@ -175,16 +177,17 @@ def test1():
     tf = 'M1'
     server = MT5Bind(market)
     timeframe = Timeframe('M1')
-    t0 = TimeUtility.jstTime(2020, 9, 21, 15, 30)
-    t1 = TimeUtility.nowJst()
+    t0 = TimeUtility.jstTime(2020, 5, 1, 0, 0)
+    t1 = TimeUtility.jstTime(2020, 7, 1, 0, 0)
     t0 = server.roundMinute(t0, timeframe)
     t1 = server.roundMinute(t1, timeframe)
     print(t0, t1)
     data = server.acquireRange(timeframe, t0, t1)
-    #print(data[0])
+    print('length: ', len(data), data[0])
     server.close()
-    df = pd.DataFrame(data=data, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
-    df.to_csv('./' + market + '_' + tf + '.csv')
+    if len(data) > 1:
+        df = pd.DataFrame(data=data, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
+        df.to_csv('./' + market + '_' + tf + '.csv')
     
 def test2():
     now = TimeUtility.nowUtc()
@@ -199,18 +202,21 @@ def test2():
 def test3(stock, timeframe_str, size):
     server = MT5Bind(stock)
     d = server.acquire(Timeframe(timeframe_str), size=size)
-    print('Done: ', len(d))
-    
+    if len(d) > 0:
+        print(stock, timeframe_str, 'Done: ', len(d), d[0], d[-1])
+    else:
+        print(stock, timeframe_str, '... No Data')
+
 def test4(stock, size):
     server = MT5Bind(stock)
-    jst = TimeUtility.jstTime(2018, 1, 1, 0, 0)
+    jst = TimeUtility.jstTime(2020, 1, 1, 0, 0)
     d = server.acquireTicks(jst, size=size)
-    print(d[0], d[-1])
-    print('Done: ', len(d))
+    print(stock, 'Done: ', len(d), d[0], d[-1])
     #df = pd.DataFrame(data = d, columns=['Time', 'Bid', 'Ask', 'value1', 'value2', 'volume'])
     #df.to_csv('./US30_tick.csv', index=False)
 
 
     
 if __name__ == "__main__":
-    test4('US30Cash', 1000000) # m1: 99999)
+    for currency in Setting.xm_fx():
+        test3(currency, 'M1', 100)

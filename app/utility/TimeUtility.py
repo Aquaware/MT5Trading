@@ -141,6 +141,10 @@ class TimeUtility:
         return timedelta(minutes=minutes)
 
     @classmethod
+    def deltaSecond(cls, seconds):
+        return timedelta(seconds=seconds)
+
+    @classmethod
     def time2str(cls, time):
         s = str(time.year) + '/' + str(time.month) + '/' + str(time.day)
         s += ' ' + str(time.hour) + ':' + str(time.minute) + ':' + str(time.second)

@@ -18,6 +18,7 @@ from TimeUtility import TimeUtility
 from Timeframe import Timeframe, HOUR, MINUTE, DAY
 from Setting import Setting
 from threading import Thread
+from Schedular import Schedular
 
 logging.basicConfig(level=logging.DEBUG, filename="debug.log", format="%(asctime)s %(levelname)-7s %(message)s")
 logger = logging.getLogger("logger")
@@ -121,36 +122,40 @@ handler = XMHandler()
 loop = True
 # -----------------
 
+
+def keyOfData(stock, timeframe):
+    return stock + '-' + timeframe.symbol
+
 def start():
-    now = TimeUtility.nowJst()
-    n = len(Timeframe.timeframes())
-    last_update = []
-    for i in range(n):
-        last_update.append(now)
+    stocks = Setting.xm_index() + Setting.xm_fx()
+    schedular = Schedular()
 
+    for stock in stocks:
+        for timeframe in Timeframe.timeframes():
+            schedular.addTask(keyOfData(stock, timeframe), timeframe)
+
+    is_initial = True
     while loop:
-        for stock in Setting.xm_index():
+        for stock in stocks:
             server = MT5Bind(stock)
-            i = 0
             for timeframe in Timeframe.timeframes():
-                (tbegin, tend) = handler.rangeOfTime(stock, timeframe)
-                data = server.acquireRange(timeframe, tend, TimeUtility.nowJst())
-                if len(data) > 1:
-                    handler.update(stock, timeframe, data)
-                    print(stock, timeframe.symbol, 'Download done ', len(data))
-                    last_update[i] = now
-
-            updateTicks(size=200)
-        time.sleep(1)
+                if is_initial or schedular.shouldDoNow(keyOfData(stock, timeframe)):
+                    (tbegin, tend) = handler.rangeOfTime(stock, timeframe)
+                    data = server.acquireRange(timeframe, tend, TimeUtility.nowJst())
+                    logger.debug(stock + ' ' + timeframe.symbol + 'Download Length: ' + str(len(data)) )
+                    if len(data) > 1:
+                        handler.update(stock, timeframe, data)
+                        print(stock, timeframe.symbol, 'Download done ', len(data))
+        is_initial = False
 
 def stop():
     loop = False
 
 # --------------------
 
-def build():
+def build(stocks):
     is_first = True
-    for stock in Setting.xm_index():
+    for stock in stocks:
         if is_first:
             handler.buildManageTable()
             print('Manage Table build')
@@ -176,8 +181,8 @@ def buildTest():
             print(stock + ': ' + timeframe.symbol + ' Table build')
 
 
-def firstUpdate(size=99999):
-    for stock in Setting.xm_index():
+def firstUpdate(stocks, size=99999):
+    for stock in stocks:
         server = MT5Bind(stock)
         for timeframe in Timeframe.timeframes():
             (begin, end) = handler.rangeOfTime(stock, timeframe)
@@ -292,10 +297,11 @@ def ticksThread():
     thread1.join()
         
 if __name__ == '__main__':
-    #build()        # Build Tables
-    #firstUpdate()  # Initial Data save to table
+    stocks = Setting.xm_index() + Setting.xm_fx()
+    build(stocks)        # Build Tables
+    firstUpdate(stocks)  # Initial Data save to table
     
-    ticksThread()
+    #ticksThread()
     
     #buildTest()
     #test2()
