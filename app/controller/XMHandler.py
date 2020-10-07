@@ -197,30 +197,29 @@ def firstUpdate(stocks, size=99999):
             logger.debug('firstUpdate() ... ' + stock + '-' + timeframe.symbol + ' begin: ' + str(begin) + ' end: ' + str(end))
 
 
-def updateTicks(repeat=100000):
-    for stock in Setting.xm_index():
-        server = MT5Bind(stock)
-        tbegin, tend = handler.rangeOfTicks(stock)
-        if tend is None:
-            t = TimeUtility.jstTime(2018, 1, 1, 0, 0)
-        else:
-            t = tend
+def updateTicks(stock, repeat=100000):
+    server = MT5Bind(stock)
+    tbegin, tend = handler.rangeOfTicks(stock)
+    if tend is None:
+        t = TimeUtility.jstTime(2018, 1, 1, 0, 0)
+    else:
+        t = tend
 
-        nothing = 0
-        for i in range(repeat):
-            data = server.acquireTicks(t, size=100000)
-            if len(data) > 1:
-                handler.updateTicks(stock, data)
-                print(stock, str(TimeUtility.nowJst()), 'Tick Download done ', i, len(data), data[0], data[-1])
-                logger.debug('updateTicks() ... ' + stock + ': ' + str(i) + ' Length:' + str(len(data)) + '...' + str(data[0]) + '-' + str(data[-1]))
-                tbegin, tend = handler.rangeOfTicks(stock)
-                t = tend
-                nothing = 0
-            else:
-                t += TimeUtility.deltaHour(6)
-                nothing += 1
-                if nothing > 10 * 6 / 24:
-                    break
+    nothing = 0
+    for i in range(repeat):
+        data = server.acquireTicks(t, size=100000)
+        if len(data) > 1:
+            handler.updateTicks(stock, data)
+            print(stock, str(TimeUtility.nowJst()), 'Tick Download done ', i, len(data), data[0], data[-1])
+            logger.debug('updateTicks() ... ' + stock + ': ' + str(i) + ' Length:' + str(len(data)) + '...' + str(data[0]) + '-' + str(data[-1]))
+            tbegin, tend = handler.rangeOfTicks(stock)
+            t = tend
+            nothing = 0
+        else:
+            t += TimeUtility.deltaHour(6)
+            nothing += 1
+            if nothing > 10 * 6 / 24:
+                break
 
 def test1():
     stock = 'US30Cash'
