@@ -48,7 +48,8 @@ class TimeUtility:
 
     @classmethod
     def jstTime(cls, year, month, day, hour, minute):
-        t = datetime(year, month, day, hour, minute, tzinfo=TIMEZONE_TOKYO)
+        zone = pytz.timezone('Asia/Tokyo')
+        t = zone.localize(datetime(year, month, day, hour, minute, 0))
         return t
 
     @classmethod

@@ -99,7 +99,7 @@ class PriceDatabase(Postgres):
         return (dic[TBEGIN], dic[TEND])
         
     def priceRange(self, stock, timeframe:Timeframe, begin_time, end_time):
-        table = CandleTable(stock, timeframe.symbol)
+        table = CandleTable(stock, timeframe)
         if begin_time is not None:
             where1 = TIME + " >= cast('" + str(begin_time)+ "' as timestamp) "
         else:
@@ -114,12 +114,30 @@ class PriceDatabase(Postgres):
             where = where1 + where2
             
         items = self.fetchItemsWhere(table, where, TIME)
-        time = []
+        times = []
+        opens = []
+        highs = []
+        lows = []
+        closes = []
+        volumes = []
         values = []
         for item in items:
-            time.append(TimeUtility.xm2jst(item[0]))
-            values.append(item[1:6])
-        return Timeseries(time, values, OHLCV)
+            t = item[0]
+            times.append(t)
+            opens.append(item[1])
+            highs.append(item[2])
+            lows.append(item[3])
+            closes.append(item[4])
+            volumes.append(item[5])
+            values.append([t] + item[1:6])
+        dic = {}
+        dic[TIME] = times
+        dic[OPEN] = opens
+        dic[HIGH] = highs
+        dic[LOW] = lows
+        dic[CLOSE] = closes
+        dic[VOLUME] = volumes
+        return (dic, values)
     
     def time2pyTime(self, time_list):
         time = []
@@ -155,10 +173,24 @@ class PriceDatabase(Postgres):
         df = pd.DataFrame(data=d, columns=columns)
         df.to_csv(filepath, index=False)
 
-   
-if __name__ == '__main__':
+# ----
+def test1():
     stock = 'US30Cash'
     timeframe = 'M1'
     db = PriceDatabase()
     table = CandleTable(stock, timeframe)
     db.saveToCsv(table, './db.csv', True)
+    
+def test2():
+    stock = 'US30Cash'
+    timeframe = Timeframe('M1')
+    db = PriceDatabase()
+    t0 = TimeUtility.jstTime(2020, 9, 1, 21, 30)
+    t1 = TimeUtility.jstTime(2020, 10, 13, 5, 30)
+    dic, values = db.priceRange(stock, timeframe, t0, t1)
+    print(dic)
+    df = pd.DataFrame(data=values, columns=dic.keys())
+    df.to_csv('./data.csv', index=False)
+    
+if __name__ == '__main__':
+    test2()    

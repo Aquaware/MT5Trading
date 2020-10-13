@@ -32,9 +32,9 @@ class Timeseries:
     def __init__(self, data, data_type, names=OHLC, index=None):
         values = []
         time = []
+        dic = {}
         if data_type == DATA_TYPE_PANDAS:
             time = TimeUtility.toDateTimeList(list(data[TIME].values))
-            dic = {}
             values = []
             for name in names:
                 dic[name] = data[name]

@@ -207,7 +207,7 @@ def updateTicks(stock, repeat=100000):
 
     nothing = 0
     for i in range(repeat):
-        data = server.acquireTicks(t, size=100000)
+        data = server.acquireTicks(t, size=20000)
         if len(data) > 1:
             handler.updateTicks(stock, data)
             print(stock, str(TimeUtility.nowJst()), 'Tick Download done ', i, len(data), data[0], data[-1])
@@ -216,9 +216,9 @@ def updateTicks(stock, repeat=100000):
             t = tend
             nothing = 0
         else:
-            t += TimeUtility.deltaHour(6)
+            t += TimeUtility.deltaHour(1)
             nothing += 1
-            if nothing > 10 * 6 / 24:
+            if nothing > 10 * 24:
                 break
 
 def test1():
@@ -297,8 +297,8 @@ def ticksThread():
         
 if __name__ == '__main__':
     stocks = Setting.xm_index() + Setting.xm_fx()
-    build(stocks)        # Build Tables
-    firstUpdate(stocks)  # Initial Data save to table
+    #build(stocks)        # Build Tables
+    #firstUpdate(stocks)  # Initial Data save to table
     
     #ticksThread()
     
