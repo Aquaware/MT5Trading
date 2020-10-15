@@ -221,6 +221,42 @@ def updateTicks(stock, repeat=100000):
             if nothing > 10 * 24:
                 break
 
+def downloadTickData(save_dir, stock, year, month, day):
+    server = MT5Bind(stock)
+    t_from = TimeUtility.jstTime(year, month, day, 0, 0)
+    t_to = t_from + TimeUtility.deltaDay(1) #TimeUtility.jstTime(year, month, day, 23, 59)
+    data = server.acquireTicksRange(t_from, t_to)
+    if len(data) > 1:
+        filepath = save_dir + stock + '_Tick_' + str(year).zfill(4) + '-' + str(month).zfill(2) + '-' + str(day).zfill(2) + '.csv'
+        df = pd.DataFrame(data=data, columns=['Time', 'Bid', 'Ask', 'Mid', 'Volume'])
+        df.to_csv(filepath, index=False)
+        
+def taskDownloadTick():
+    stock = 'US30Cash'
+    year = 2020
+    dir_path = '../tick_data/' + str(year).zfill(4) + '/'
+    try:
+        os.mkdir(dir_path)    
+    except:
+        print('!')
+        
+    for month in range(1, 13):
+        if month == 1:
+            dir_path += str(month).zfill(2) + '/'
+            try:
+                os.mkdir(dir_path)
+            except:
+                print('!') 
+
+        for day in range(1, 31):
+            try:
+                t = TimeUtility.jstTime(year, month, day, 0, 0)
+                downloadTickData(dir_path, stock, year, month, day)
+            except:
+                break
+        
+    print('Done')
+    
 def test1():
     stock = 'US30Cash'
 
@@ -296,17 +332,13 @@ def ticksThread():
     thread1.join()
         
 if __name__ == '__main__':
-    stocks = Setting.xm_index() + Setting.xm_fx()
+    #stocks = Setting.xm_index() + Setting.xm_fx()
     #build(stocks)        # Build Tables
     #firstUpdate(stocks)  # Initial Data save to table
     
     #ticksThread()
     
-    #buildTest()
-    #test2()
-    #test4()
-    #save('US30Cash', 'D1')
-    #test4()
+    taskDownloadTick()
 
 
 
