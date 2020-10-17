@@ -8,6 +8,7 @@ sys.path.append('../mt5api')
 sys.path.append('../db')
 sys.path.append('../utillity')
 sys.path.append('../setting')
+import glob
 
 import logging
 import time
@@ -222,40 +223,49 @@ def updateTicks(stock, repeat=100000):
                 break
 
 def downloadTickData(save_dir, stock, year, month, day):
+    filepath = save_dir + stock + '_Tick_' + str(year).zfill(4) + '-' + str(month).zfill(2) + '-' + str(day).zfill(2) + '.csv'
+    if os.path.isfile(filepath):
+        return
     server = MT5Bind(stock)
     t_from = TimeUtility.jstTime(year, month, day, 0, 0)
     t_to = t_from + TimeUtility.deltaDay(1) #TimeUtility.jstTime(year, month, day, 23, 59)
     data = server.acquireTicksRange(t_from, t_to)
-    if len(data) > 1:
-        filepath = save_dir + stock + '_Tick_' + str(year).zfill(4) + '-' + str(month).zfill(2) + '-' + str(day).zfill(2) + '.csv'
+    if len(data) > 0:
         df = pd.DataFrame(data=data, columns=['Time', 'Bid', 'Ask', 'Mid', 'Volume'])
         df.to_csv(filepath, index=False)
-        
-def taskDownloadTick():
-    stock = 'US30Cash'
-    year = 2020
-    dir_path = '../tick_data/' + str(year).zfill(4) + '/'
+
+def deleteLastFile(dir_path):
+    l = glob.glob(dir_path)
+    if len(l) > 0:
+        file = l[-1]
+        os.remove(file)
+        print('Delete File ...' + file)
+        return file
+    else:
+        return None
+    
+def taskDownloadTick(stock):
+    root = 'd://tick_data/' + stock + '/'
     try:
-        os.mkdir(dir_path)    
+        os.mkdir(root)    
     except:
         print('!')
+    for year in range(2016, 2021):
+        dir_path = root + str(year).zfill(4) + '/'
+        try:
+            os.mkdir(dir_path)    
+        except:
+            deleteLastFile(dir_path + '/*.csv')
+            
         
-    for month in range(1, 13):
-        if month == 1:
-            dir_path += str(month).zfill(2) + '/'
-            try:
-                os.mkdir(dir_path)
-            except:
-                print('!') 
-
-        for day in range(1, 31):
-            try:
-                t = TimeUtility.jstTime(year, month, day, 0, 0)
-                downloadTickData(dir_path, stock, year, month, day)
-            except:
-                break
-        
-    print('Done')
+        for month in range(1, 13):
+            for day in range(1, 32):
+                try:
+                    t = TimeUtility.jstTime(year, month, day, 0, 0)
+                    downloadTickData(dir_path, stock, year, month, day)
+                except:
+                    continue
+        print('Done ' + stock + '...' + str(year))
     
 def test1():
     stock = 'US30Cash'
@@ -337,8 +347,10 @@ if __name__ == '__main__':
     #firstUpdate(stocks)  # Initial Data save to table
     
     #ticksThread()
+    #"['US500Cash', 'CHI50Cash', 'GER30Cash', 'USDJPY', 'AUDJPYmicro', 'EURUSD', 'GBPUSD']
+    for stock in ['USDJPY', 'AUDJPYmicro', 'EURUSD', 'GBPUSD']:
+        taskDownloadTick(stock)
     
-    taskDownloadTick()
 
 
 
